@@ -1,19 +1,18 @@
-import { Component } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Message } from 'src/app/models/message.model';
 import { User } from 'src/app/models/user.model';
 import { AuthService } from 'src/app/services/auth.service';
 import { ChatService } from 'src/app/services/chat.service';
 import { UserService } from 'src/app/services/user.service';
+import * as uuid from 'uuid';
 
 @Component({
   selector: 'app-chat',
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss'],
 })
-export class ChatComponent {
-  newMessage!: Message;
-  Math = Math;
+export class ChatComponent implements OnInit{
   messageList: Message[] = [];
   currentUser!: any;
   currentUserInfo!: any;
@@ -37,9 +36,8 @@ export class ChatComponent {
         this.getCurrentUserInfo();
       }
     });
-    this.chatService.getNewMessage().subscribe((message) => {
-      this.messageList.push(message);
-    });
+
+  this.subscribeToMessages();
   }
 
   getCurrentUserInfo() {
@@ -48,12 +46,24 @@ export class ChatComponent {
     });
   }
 
+  subscribeToMessages(){
+    this.chatService.message$.subscribe((message) => {
+      console.log('Received new message in component:', message)
+      if(message){
+        this.messageList.push(message)
+      }
+    });
+  }
+
   sendMessage(currentUserInfo: User) {
-    this.newMessage = {
+    const newMessage = {
+      id: uuid.v4(),
       body: this.form.controls.messageBody.value ?? 'undefined',
       author: currentUserInfo,
+      userID: currentUserInfo.id,
+      created_at: new Date()
     };
-    this.chatService.sendMessage(this.newMessage);
+    this.chatService.sendMessage(newMessage);
     this.form.reset();
   }
 }
